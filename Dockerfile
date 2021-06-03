@@ -28,10 +28,7 @@ RUN svn co http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_361/final /llvm/llv
 RUN svn co https://llvm.org/svn/llvm-project/compiler-rt/tags/RELEASE_361/final/ /llvm/llvm-361/source/projects/compiler-rt
 RUN mkdir /llvm/llvm-361/build; cd /llvm/llvm-361/build; cmake ../source -DCMAKE_BUILD_TYPE=Release -DCMAKE_ENABLE_ASSERTIONS=OFF -DLLVM_ENABLE_WERROR=OFF -DCMAKE_CXX_FLAGS="-std=c++11"
 RUN cd /llvm/llvm-361/build; make -j32; make install
-
-
-ADD prophet-0.1-src.tar.gz /prophet.tar.gz
-RUN gunzip prophet.tar.gz && tar -xf prophet.tar && rm prophet.tar
+ADD . /prophet-gpl
 RUN cd /prophet-gpl;autoreconf -i;
 RUN cd /prophet-gpl;CC=clang CXX=clang++ ./configure --host=x86_64 --build=x86_64 --enable-shared
 RUN sed -i -e '456d' /prophet-gpl/benchmarks/php-deps/Makefile
