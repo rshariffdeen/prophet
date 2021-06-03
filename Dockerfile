@@ -23,10 +23,9 @@ RUN apt-get update && apt-get install -y \
     subversion \
     wget
 
-RUN mkdir -p /llvm/llvm-361; svn co  http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_361/final /llvm/llvm-361/source;
-RUN svn co http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_361/final /llvm/llvm-361/source/tools/clang
-RUN svn co https://llvm.org/svn/llvm-project/compiler-rt/tags/RELEASE_361/final/ /llvm/llvm-361/source/projects/compiler-rt
-RUN mkdir /llvm/llvm-361/build; cd /llvm/llvm-361/build; cmake ../source -DCMAKE_BUILD_TYPE=Release -DCMAKE_ENABLE_ASSERTIONS=OFF -DLLVM_ENABLE_WERROR=OFF -DCMAKE_CXX_FLAGS="-std=c++11"
+RUN mkdir -p /llvm/llvm-361; git clone -b llvmorg-3.6.1 --single-branch https://github.com/llvm/llvm-project /llvm/llvm-361/source
+RUN mv /llvm/llvm-361/source/clang /llvm/llvm-361/source/llvm/tools/clang; mv /llvm/llvm-361/source/compiler-rt /llvm/llvm-361/source/llvm/projects/compiler-rt
+RUN mkdir /llvm/llvm-361/build; cd /llvm/llvm-361/build; cmake ../source/llvm -DCMAKE_BUILD_TYPE=Release -DCMAKE_ENABLE_ASSERTIONS=OFF -DLLVM_ENABLE_WERROR=OFF -DCMAKE_CXX_FLAGS="-std=c++11"
 RUN cd /llvm/llvm-361/build; make -j32; make install
 ADD . /prophet-gpl
 RUN cd /prophet-gpl;autoreconf -i;
