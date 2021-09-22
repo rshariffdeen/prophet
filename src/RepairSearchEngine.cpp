@@ -243,10 +243,7 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
         fclose(fout);
         return 0;
     }
-    else if(dumpAll){
-        outlog_printf(1, "Dumping all candidates!\n");
-    }
-    else {
+
         outlog_printf(1, "Trying different candidates!\n");
         ExprSynthesizer ES(P, M, q, naive, learning, FP);
         if (timeout_limit != 0)
@@ -308,5 +305,5 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
         outlog_printf(1, "Total %lu different repair candidate templates for scoring!!!\n", candidate_cnt);
         outlog_printf(1, "Total %lu different partial repair candidate templates!!\n", partial_candidate_cnt);
         return 0;
-    }
+
 }
