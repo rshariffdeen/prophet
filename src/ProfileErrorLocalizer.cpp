@@ -158,7 +158,7 @@ ProfileErrorLocalizer::ProfileErrorLocalizer(BenchProgram &P,
         llvm::errs() << "Neg Processing: "<< *it << "\n";
         ProfileLocationMapTy res;
         clearProfileResult();
-        bool tmp = P.test("profile", *it, testEnv, true);
+        bool tmp = P.test("profile", *it, testEnv, true, false);
         res = parseProfileResult();
 
         if (*it < min_id) min_id = *it;
@@ -192,7 +192,7 @@ ProfileErrorLocalizer::ProfileErrorLocalizer(BenchProgram &P,
         llvm::errs() << "Processing: " << cnt << " : " << *it << "\n";
         ProfileLocationMapTy res;
         clearProfileResult();
-        bool tmp = P.test("profile", *it, testEnv, true);
+        bool tmp = P.test("profile", *it, testEnv, true, false);
         res = parseProfileResult();
         cnt ++;
         if (!tmp) {

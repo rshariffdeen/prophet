@@ -409,23 +409,23 @@ protected:
     TestCaseSetTy failed_cases;
     bool naive;
 
-    bool testOneCase(const BenchProgram::EnvMapTy &env, unsigned long t_id) {
-        return P.test(std::string("src"), t_id, env, false);
+    bool testOneCase(const BenchProgram::EnvMapTy &env, unsigned long t_id, bool dump_only = false) {
+        return P.test(std::string("src"), t_id, env, false, dump_only);
     }
 
-    bool testNegativeCases(const BenchProgram::EnvMapTy &env) {
+    bool testNegativeCases(const BenchProgram::EnvMapTy &env, bool dump_only = false) {
         for (TestCaseSetTy::iterator it = negative_cases.begin();
                 it != negative_cases.end(); it++)
-            if (!testOneCase(env, *it))
+            if (!testOneCase(env, *it, dump_only))
                 return false;
         outlog_printf(2, "Passed Negative Cases\n");
         return true;
     }
 
-    bool testPositiveCases(const BenchProgram::EnvMapTy &env) {
+    bool testPositiveCases(const BenchProgram::EnvMapTy &env, bool dump_only = false) {
         for (TestCaseSetTy::iterator it = failed_cases.begin();
                 it != failed_cases.end(); it++) {
-            if (!testOneCase(env, *it)) {
+            if (!testOneCase(env, *it, dump_only)) {
                 outlog_printf(2, "Failed positive case %lu\n", *it);
                 return false;
             }
@@ -434,7 +434,7 @@ protected:
                 it != positive_cases.end(); it++) {
             if (failed_cases.count(*it) != 0)
                 continue;
-            if (!testOneCase(env, *it)) {
+            if (!testOneCase(env, *it, dump_only)) {
                 outlog_printf(2, "Failed positive case %lu\n", *it);
                 failed_cases.insert(*it);
                 return false;
@@ -537,16 +537,13 @@ public:
             out_codes(codes[id], patches[id]);
         }
         outlog_printf(3, "Testing negative cases!\n");
-        if (dump_only){
-            return true;
-        }
-        if (!testNegativeCases(env)) {
+        if (!testNegativeCases(env, dump_only)) {
             codes[id].clear();
             patches[id].clear();
             return false;
         }
         outlog_printf(3, "Testing positive cases!\n");
-        bool ret = testPositiveCases(env);
+        bool ret = testPositiveCases(env, dump_only);
         if (ret)
             outlog_printf(2, "[%llu] Passed!\n", get_timer());
         else {
@@ -804,7 +801,7 @@ public:
                 ret = system(cmd.c_str());
                 assert( ret == 0);
             }
-            if (!testOneCase(new_env, *it)) {
+            if (!testOneCase(new_env, *it, false)) {
                 bool may_pass = false;
                 std::vector<std::string> outstr, expstr;
                 if (parseFile(outstr, tmp_out))
@@ -1516,7 +1513,7 @@ class ConditionSynthesisTester : public BasicTester {
             while (it_cnt < 10) {
                 outlog_printf(5, "Iteration %lu\n", it_cnt);
                 //llvm::errs() << "Testing iteration: " << it_cnt << "\n";
-                passed = P.test(std::string("src"), *case_it, testEnv, false);
+                passed = P.test(std::string("src"), *case_it, testEnv, false, false);
                 std::vector<unsigned long> tmp_v = parseBranchRecord();
                 writeBranchRecordTerminator();
                 for (size_t i = 0; i < tmp_v.size(); i++)
@@ -1545,7 +1542,7 @@ class ConditionSynthesisTester : public BasicTester {
                 testEnv.insert(std::make_pair("TMP_FILE", ISNEG_TMPFILE));
                 int ret = system((std::string("rm -rf ") + ISNEG_TMPFILE).c_str());
                 assert( ret == 0);
-                passed = P.test(std::string("src"), *case_it, testEnv, false);
+                passed = P.test(std::string("src"), *case_it, testEnv, false, false);
                 if (passed) {
                     std::vector<unsigned long> tmp_v = parseBranchRecord();
                     // FIXME: strange error in wireshark, we just ignore right now
@@ -1618,7 +1615,7 @@ class ConditionSynthesisTester : public BasicTester {
             std::string cmd = std::string("rm -rf ") + ISNEG_RECORDFILE;
             int ret = system(cmd.c_str());
             assert( ret == 0);
-            bool passed = P.test(std::string("src"), *tit, testEnv, false);
+            bool passed = P.test(std::string("src"), *tit, testEnv, false, false);
             // FIXME: It triggers non-deterministic things, just
             // get out
             if (!passed) {
@@ -1638,7 +1635,7 @@ class ConditionSynthesisTester : public BasicTester {
             std::string cmd = std::string("rm -rf ") + ISNEG_RECORDFILE;
             int ret = system(cmd.c_str());
             assert( ret == 0);
-            bool passed = P.test(std::string("src"), *tit, testEnv, false);
+            bool passed = P.test(std::string("src"), *tit, testEnv, false, false);
             caseVMap[*tit].clear();
             // XXX: This may happen because record takes more time, and it
             // makes the positive case to time out we simply skip if it fails
@@ -1816,7 +1813,7 @@ public:
             }
             TestCaseSetTy passed;
             outlog_printf(3, "Verifing Negative cases!\n");
-            passed = P.testSet("src", negative_cases, std::map<std::string, std::string>());
+            passed = P.testSet("src", negative_cases, std::map<std::string, std::string>(), false);
             if (passed != negative_cases) {
                 outlog_printf(3, "Not passed!\n");
                 continue;
@@ -1903,10 +1900,10 @@ public:
                     continue;
                 }
                 outlog_printf(3, "Trying Negative cases!\n");
-                passed = P.testSet("src", negative_cases, std::map<std::string, std::string>());
+                passed = P.testSet("src", negative_cases, std::map<std::string, std::string>(), false);
                 if (passed == negative_cases) {
                     outlog_printf(3, "Trying Positive cases!\n");
-                    passed = P.testSet("src", positive_cases, std::map<std::string, std::string>());
+                    passed = P.testSet("src", positive_cases, std::map<std::string, std::string>(), false);
                     if (passed == positive_cases) {
                         outlog_printf(2, "[%llu] Passed!\n", get_timer());
                         if (DumpPassedCandidate.getValue() != "")

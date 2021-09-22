@@ -199,10 +199,10 @@ public:
             const std::map<std::string, std::string> &fileCodeMap);
 
     TestCaseSetTy testSet(const std::string &subDir, const TestCaseSetTy &case_set,
-            const EnvMapTy &envMap, bool pass_basic_src_dir = false);
+            const EnvMapTy &envMap, bool pass_basic_src_dir = false, bool dump_only = false);
 
     bool test(const std::string &subDir, size_t id, const EnvMapTy &envMap,
-            bool pass_basic_src_dir);
+            bool pass_basic_src_dir, bool dump_only);
 
 /*    BenchProgram(const std::string &src_dir, const std::string &test_dir,
             const std::string &build_cmd, const std::string &test_cmd,

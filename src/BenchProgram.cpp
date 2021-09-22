@@ -509,7 +509,7 @@ bool BenchProgram::buildWithRepairedCode(const std::string &wrapScript, const En
 }*/
 
 BenchProgram::TestCaseSetTy BenchProgram::testSet(const std::string &subDir,
-        const TestCaseSetTy &case_set, const EnvMapTy &env_pairs, bool pass_basic_src_dir) {
+        const TestCaseSetTy &case_set, const EnvMapTy &env_pairs, bool pass_basic_src_dir, bool dump_only) {
     if (case_set.size() == 0)
         return std::set<unsigned long>();
 
@@ -536,8 +536,12 @@ BenchProgram::TestCaseSetTy BenchProgram::testSet(const std::string &subDir,
     }*/
 
     // case_timeout controls the timeout of each executed test case
-    if (case_set.size() != 1)
+    if (dump_only){
+        res = 0;
+    }
+    else if (case_set.size() != 1) {
         res = system(cmd.c_str());
+    }
     else {
         res = execute_with_timeout(cmd.c_str(), case_timeout);
     }
