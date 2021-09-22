@@ -531,12 +531,15 @@ public:
         return NULL;
     }
 
-    virtual bool test(const BenchProgram::EnvMapTy &env, unsigned long id) {
+    virtual bool test(const BenchProgram::EnvMapTy &env, unsigned long id, bool dump_only) {
         {
             outlog_printf(2, "[%llu] BasicTester, Testing instance id %lu:\n", get_timer(), id);
             out_codes(codes[id], patches[id]);
         }
         outlog_printf(3, "Testing negative cases!\n");
+        if (dump_only){
+            return true;
+        }
         if (!testNegativeCases(env)) {
             codes[id].clear();
             patches[id].clear();
@@ -1950,8 +1953,12 @@ class TestBatcher {
 
 
     std::map<NewCodeMapTy, double> singleTest(const CodeSegTy &codeSegs, const CodeSegTy &patches,
-            BasicTester *T, unsigned long id) {
+            BasicTester *T, unsigned long id, bool dump_only) {
         BenchProgram::EnvMapTy buildEnv;
+        if (dump_only){
+            bool ret = T->test(BenchProgram::EnvMapTy(), id, dump_only);
+            return T->getResults(id);
+        }
         buildEnv.clear();
         if (ForCPP.getValue())
             buildEnv["COMPILE_CMD"] = "clang++";
@@ -1964,7 +1971,7 @@ class TestBatcher {
                     T, id);
             return std::map<NewCodeMapTy, double>();
         }
-        bool ret = T->test(BenchProgram::EnvMapTy(), id);
+        bool ret = T->test(BenchProgram::EnvMapTy(), id, false);
         if (ret)
             return T->getResults(id);
         else
@@ -1993,7 +2000,18 @@ class TestBatcher {
         }
         if (dumpOnly){
             for (size_t i = 0; i < tmp.size(); i++) {
-                succCandidates.push_back(tmp[i].rc);
+                BasicTester *T = tmp[i].T;
+                std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, tmp_patches[i], T, tmp[i].id, dumpOnly);
+                for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
+                     it != code_set.end(); it++) {
+                    NewCodeMapTy code = it->first;
+                    double res_score = it->second;
+                    if (res.count(code) == 0)
+                        res.insert(std::make_pair(code, res_score));
+                    else if (res[code] < res_score)
+                        res[code] = res_score;
+                    succCandidates.push_back(tmp[i].rc);
+                }
             }
         } else {
             std::map<std::string, std::string> codes = mergeCode(codeSegs, tmp_patches);
@@ -2025,7 +2043,7 @@ class TestBatcher {
                     std::ostringstream sout;
                     sout << i;
                     testEnv["MUTANT_ID"] = sout.str();
-                    bool ret = T->test(testEnv, tmp[i].id);
+                    bool ret = T->test(testEnv, tmp[i].id, false);
                     if (ret) {
                         succ_list.push_back(std::make_pair(T, tmp[i].id));
                         c_list.push_back(tmp[i].rc);
@@ -2053,7 +2071,7 @@ class TestBatcher {
                 // We have to fail back to naive way, build them saperately
                 for (size_t i = 0; i < tmp.size(); i++) {
                     BasicTester *T = tmp[i].T;
-                    std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, tmp_patches[i], T, tmp[i].id);
+                    std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, tmp_patches[i], T, tmp[i].id, false);
                     for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
                             it != code_set.end(); it++) {
                         NewCodeMapTy code = it->first;
@@ -2066,8 +2084,8 @@ class TestBatcher {
                     }
                 }
             }
-            candidateMap.erase(codeSegs);
         }
+        candidateMap.erase(codeSegs);
     }
 public:
     TestBatcher(BenchProgram &P, bool naive,
@@ -2096,7 +2114,7 @@ public:
                 tot_explored_templates += candidate.getCandidateAtoms().size();
                 patch_explored += candidate.getCandidateAtoms().size();
                 outlog_printf(0, "The number of explored templates: %lu\n", tot_explored_templates);
-                std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, patches, T, ids[i]);
+                std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, patches, T, ids[i], false);
                 for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
                         it != code_set.end(); it++) {
                     NewCodeMapTy code = it->first;
