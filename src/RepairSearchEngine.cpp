@@ -256,7 +256,7 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
         resList.clear();
         do {
             ExprSynthesizerResultTy res;
-            bool ret = ES.workUntil(try_at_least, 0, res, full_synthesis, random);
+            bool ret = ES.workUntil(try_at_least, 0, res, full_synthesis, random, dumpAll);
             if (!ret) {
                 if (cnt == 0)
                     outlog_printf(1, "Repair process ends without working fix!!\n");

@@ -49,7 +49,7 @@ public:
 
     bool workUntil(size_t candidate_limit,
             size_t time_limit, ExprSynthesizerResultTy &res,
-            bool full_synthesis, bool quit_with_any);
+            bool full_synthesis, bool quit_with_any, bool dump_only);
 
     size_t getTestedCandidateNumber() {
         return tested_cnt;

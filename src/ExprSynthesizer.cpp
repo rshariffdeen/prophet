@@ -1971,7 +1971,7 @@ class TestBatcher {
             return std::map<NewCodeMapTy, double>();
     }
 
-    void doTest(const CodeSegTy &codeSegs) {
+    void doTest(const CodeSegTy &codeSegs, bool dumpOnly) {
         if (the_timeout_limit != 0)
             if (get_timer() > the_timeout_limit) {
                 outlog_printf(1, "[%llu] Timeout! Limit is %llu\n", get_timer(), the_timeout_limit);
@@ -1991,77 +1991,83 @@ class TestBatcher {
             patch_explored += tmp[i].rc.getCandidateAtoms().size();
             outlog_printf(0, "The number of explored templates: %lu\n", tot_explored_templates);
         }
-        std::map<std::string, std::string> codes = mergeCode(codeSegs, tmp_patches);
-        {
-            outlog_printf(4, "Building merged code:\n");
-            for (NewCodeMapTy::iterator it = codes.begin(); it != codes.end(); ++ it) {
-                outlog_printf(4, "src_file: %s\n", it->first.c_str());
-                outlog_printf(4, "full src: %s\n", it->second.c_str());
-            }
-        }
-        BenchProgram::EnvMapTy buildEnv;
-        buildEnv.clear();
-        if (ForCPP.getValue())
-            buildEnv["COMPILE_CMD"] = "clang++";
-        else
-            buildEnv["COMPILE_CMD"] = GCC_CMD;
-        bool build_succ = P.buildWithRepairedCode(CLANG_TEST_WRAP, buildEnv, codes);
-        if (build_succ) {
-            outlog_printf(2, "Merged code building succ, going to invoke tester!\n");
-            // We then invoke these testers they all share this same built instance
-            std::vector<std::pair<BasicTester*, unsigned long> > succ_list;
-            std::vector<RepairCandidate> c_list;
-            succ_list.clear();
-            c_list.clear();
+        if (dumpOnly){
             for (size_t i = 0; i < tmp.size(); i++) {
-                BasicTester *T = tmp[i].T;
-                BenchProgram::EnvMapTy testEnv;
-                testEnv.clear();
-                std::ostringstream sout;
-                sout << i;
-                testEnv["MUTANT_ID"] = sout.str();
-                bool ret = T->test(testEnv, tmp[i].id);
-                if (ret) {
-                    succ_list.push_back(std::make_pair(T, tmp[i].id));
-                    c_list.push_back(tmp[i].rc);
+                succCandidates.push_back(tmp[i].rc);
+            }
+        } else {
+            std::map<std::string, std::string> codes = mergeCode(codeSegs, tmp_patches);
+            {
+                outlog_printf(4, "Building merged code:\n");
+                for (NewCodeMapTy::iterator it = codes.begin(); it != codes.end(); ++ it) {
+                    outlog_printf(4, "src_file: %s\n", it->first.c_str());
+                    outlog_printf(4, "full src: %s\n", it->second.c_str());
                 }
             }
-            // We then need to invoke the post processing of these successive runs to
-            // get the results, we split this with the main test because this part may
-            // involve build the bench program again.
-            for (size_t i = 0; i < succ_list.size(); i++) {
-                std::map<NewCodeMapTy, double> code_set = succ_list[i].first->getResults(succ_list[i].second);
-                for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
-                        it != code_set.end(); it++) {
-                    NewCodeMapTy code = it->first;
-                    double res_score = it->second;
-                    if (res.count(code) == 0)
-                        res.insert(std::make_pair(code, res_score));
-                    else if (res[code] < res_score)
-                        res[code] = res_score;
-                    succCandidates.push_back(c_list[i]);
+            BenchProgram::EnvMapTy buildEnv;
+            buildEnv.clear();
+            if (ForCPP.getValue())
+                buildEnv["COMPILE_CMD"] = "clang++";
+            else
+                buildEnv["COMPILE_CMD"] = GCC_CMD;
+            bool build_succ = P.buildWithRepairedCode(CLANG_TEST_WRAP, buildEnv, codes);
+            if (build_succ) {
+                outlog_printf(2, "Merged code building succ, going to invoke tester!\n");
+                // We then invoke these testers they all share this same built instance
+                std::vector<std::pair<BasicTester*, unsigned long> > succ_list;
+                std::vector<RepairCandidate> c_list;
+                succ_list.clear();
+                c_list.clear();
+                for (size_t i = 0; i < tmp.size(); i++) {
+                    BasicTester *T = tmp[i].T;
+                    BenchProgram::EnvMapTy testEnv;
+                    testEnv.clear();
+                    std::ostringstream sout;
+                    sout << i;
+                    testEnv["MUTANT_ID"] = sout.str();
+                    bool ret = T->test(testEnv, tmp[i].id);
+                    if (ret) {
+                        succ_list.push_back(std::make_pair(T, tmp[i].id));
+                        c_list.push_back(tmp[i].rc);
+                    }
+                }
+                // We then need to invoke the post processing of these successive runs to
+                // get the results, we split this with the main test because this part may
+                // involve build the bench program again.
+                for (size_t i = 0; i < succ_list.size(); i++) {
+                    std::map<NewCodeMapTy, double> code_set = succ_list[i].first->getResults(succ_list[i].second);
+                    for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
+                            it != code_set.end(); it++) {
+                        NewCodeMapTy code = it->first;
+                        double res_score = it->second;
+                        if (res.count(code) == 0)
+                            res.insert(std::make_pair(code, res_score));
+                        else if (res[code] < res_score)
+                            res[code] = res_score;
+                        succCandidates.push_back(c_list[i]);
+                    }
                 }
             }
+            else {
+                outlog_printf(2, "Merged code building failed! Going to build saperately!\n");
+                // We have to fail back to naive way, build them saperately
+                for (size_t i = 0; i < tmp.size(); i++) {
+                    BasicTester *T = tmp[i].T;
+                    std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, tmp_patches[i], T, tmp[i].id);
+                    for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
+                            it != code_set.end(); it++) {
+                        NewCodeMapTy code = it->first;
+                        double res_score = it->second;
+                        if (res.count(code) == 0)
+                            res.insert(std::make_pair(code, res_score));
+                        else if (res[code] < res_score)
+                            res[code] = res_score;
+                        succCandidates.push_back(tmp[i].rc);
+                    }
+                }
+            }
+            candidateMap.erase(codeSegs);
         }
-        else {
-            outlog_printf(2, "Merged code building failed! Going to build saperately!\n");
-            // We have to fail back to naive way, build them saperately
-            for (size_t i = 0; i < tmp.size(); i++) {
-                BasicTester *T = tmp[i].T;
-                std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, tmp_patches[i], T, tmp[i].id);
-                for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
-                        it != code_set.end(); it++) {
-                    NewCodeMapTy code = it->first;
-                    double res_score = it->second;
-                    if (res.count(code) == 0)
-                        res.insert(std::make_pair(code, res_score));
-                    else if (res[code] < res_score)
-                        res[code] = res_score;
-                    succCandidates.push_back(tmp[i].rc);
-                }
-            }
-        }
-        candidateMap.erase(codeSegs);
     }
 public:
     TestBatcher(BenchProgram &P, bool naive,
@@ -2071,7 +2077,7 @@ public:
 
     // This is a lazy test routine, we are only going to decode it without
     // actually doing the test in the most of the time
-    void test(const RepairCandidate &candidate, BasicTester* T) {
+    void test(const RepairCandidate &candidate, BasicTester* T, bool dumpOnly) {
         std::vector<unsigned long> ids = T->preprocess(candidate);
         total_cnt += ids.size();
         outlog_printf(2, "Spawn %lu instances, now Total %lu\n", (unsigned long)ids.size(), total_cnt);
@@ -2084,7 +2090,7 @@ public:
                 candidateMap[codeSegs].push_back(CandidateEntry(candidate, T, ids[i]));
                 cur_size ++;
                 if (candidateMap[codeSegs].size() >= BATCH_CAP)
-                    doTest(codeSegs);
+                    doTest(codeSegs, dumpOnly);
             }
             else {
                 tot_explored_templates += candidate.getCandidateAtoms().size();
@@ -2123,14 +2129,14 @@ public:
         return tmp;
     }
 
-    void sync() {
+    void sync(bool dumpOnly) {
         std::vector<CodeSegTy> tmp;
         tmp.clear();
         for (CandidateMapTy::iterator it = candidateMap.begin();
                 it != candidateMap.end(); ++it)
             tmp.push_back(it->first);
         for (size_t i = 0; i < tmp.size(); ++i)
-            doTest(tmp[i]);
+            doTest(tmp[i], dumpOnly);
     }
 
     size_t size() {
@@ -2145,7 +2151,7 @@ public:
 }
 
 bool ExprSynthesizer::workUntil(size_t candidate_limit, size_t time_limit,
-        ExprSynthesizerResultTy &res, bool full_synthesis, bool quit_with_any) {
+        ExprSynthesizerResultTy &res, bool full_synthesis, bool quit_with_any, bool dump_only) {
     the_timeout_limit = this->timeout_limit;
     TestBatcher TB(P, naive, learning, FP);
     std::vector<BasicTester*> testers;
@@ -2179,10 +2185,10 @@ bool ExprSynthesizer::workUntil(size_t candidate_limit, size_t time_limit,
         if ((cnt % SYNC_CAP == 0) || (now_t - last_sync > SYNC_TIME_CAP)) {
             last_sync = now_t;
             outlog_printf(2, "Going to sync the batch tester, clear all existing tasks!\n");
-            TB.sync();
+            TB.sync(dump_only);
         }
         if (TB.hasResult()) {
-            TB.sync();
+            TB.sync(dump_only);
             std::vector<std::pair<NewCodeMapTy, double> > tmp = TB.getResults();
             if (tmp.size() > 0)
                 if (found_score < tmp[0].second) {
@@ -2226,7 +2232,7 @@ bool ExprSynthesizer::workUntil(size_t candidate_limit, size_t time_limit,
         candidate_to_id[candidate.toString(M)] = cnt;
         for (size_t i = 0; i < testers.size(); i++)
             if (testers[i]->canHandle(candidate)) {
-                TB.test(candidate, testers[i]);
+                TB.test(candidate, testers[i], dump_only);
                 found = true;
                 break;
             }
@@ -2235,7 +2241,7 @@ bool ExprSynthesizer::workUntil(size_t candidate_limit, size_t time_limit,
             continue;
         }
     }
-    TB.sync();
+    TB.sync(dump_only);
     if (TB.hasResult()) {
         std::vector<std::pair<NewCodeMapTy, double> > tmp = TB.getResults();
         collected_res.insert(collected_res.end(), tmp.begin(), tmp.end());
