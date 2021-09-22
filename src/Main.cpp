@@ -74,6 +74,8 @@ llvm::cl::opt<bool> FullSynthesis("full-synthesis",
         llvm::cl::desc("Try all conditions instead of choosing the first one."));
 llvm::cl::opt<std::string> SummaryFile("summary-file", llvm::cl::init(""),
         llvm::cl::desc("Output the list of generated patch id and scores to the file, sorted!"));
+llvm::cl::opt<bool> DumpCandidates("dump-all", llvm::cl::init(false),
+                                       llvm::cl::desc("dump candidates"));
 llvm::cl::opt<bool> ConsiderAll("consider-all",
         llvm::cl::desc("Consider all possible files."));
 llvm::cl::opt<unsigned int> FirstNLoc("first-n-loc", llvm::cl::init(5000),
@@ -185,6 +187,7 @@ int main(int argc, char* argv[]) {
     E.setLocLimit(FirstNLoc.getValue());
     E.setGeoP(GeoP.getValue());
     E.setRandom(Random.getValue());
+    E.setDumpAll(DumpCandidates.getValue());
     E.setSummaryFile(SummaryFile.getValue());
     if (Timeout.getValue() != 0)
         E.setTimeoutLimit(((unsigned long long)Timeout.getValue()) * 60 * 60);

@@ -48,6 +48,7 @@ class RepairSearchEngine {
     double GeoP;
     // We will just nuke the search space scores and use random search if this is set
     bool random;
+    bool dumpAll;
     std::string summaryFile;
     unsigned long long timeout_limit;
 
@@ -76,6 +77,9 @@ public:
     }
     void setSummaryFile(const std::string &summaryFile) {
         this->summaryFile = summaryFile;
+    }
+    void setDumpAll(bool dumpAll){
+        this->dumpAll = dumpAll;
     }
     int run(const std::string &out_prefix, size_t try_at_least,
             bool print_fix_only, bool full_synthesis);

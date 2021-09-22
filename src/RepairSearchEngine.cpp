@@ -243,6 +243,9 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
         fclose(fout);
         return 0;
     }
+    else if(dumpAll){
+        outlog_printf(1, "Dumping all candidates!\n");
+    }
     else {
         outlog_printf(1, "Trying different candidates!\n");
         ExprSynthesizer ES(P, M, q, naive, learning, FP);
