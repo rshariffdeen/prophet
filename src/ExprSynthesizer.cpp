@@ -1999,7 +1999,7 @@ class TestBatcher {
                 CodeSegTy codes = T->getCodeSegs(id);
                 CodeSegTy patches = T->getPatches(id);
                 double score = 0.0;
-                std::map<NewCodeMapTy, double> code_set = singleResult(T->cleanUpCode(combineCode(codes[id], patches[id])), score);
+                std::map<NewCodeMapTy, double> code_set = T->singleResult(T->cleanUpCode(combineCode(codes, patches)), score);
                 for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
                      it != code_set.end(); it++) {
                     NewCodeMapTy code = it->first;
