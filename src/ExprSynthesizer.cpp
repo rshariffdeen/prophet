@@ -443,7 +443,7 @@ protected:
         outlog_printf(2, "Passed Positive Cases\n");
         return true;
     }
-
+public:
     NewCodeMapTy cleanUpCode(const NewCodeMapTy &code) {
         NewCodeMapTy ret = code;
         for (NewCodeMapTy::iterator it = ret.begin(); it != ret.end(); ++it)
@@ -458,7 +458,7 @@ protected:
         return ret;
     }
 
-public:
+
     BasicTester(BenchProgram &P, bool learning, SourceContextManager &M, bool naive):
     P(P), learning(learning), M(M),
     negative_cases(P.getNegativeCaseSet()),
@@ -1952,15 +1952,12 @@ class TestBatcher {
     std::map<NewCodeMapTy, double> singleTest(const CodeSegTy &codeSegs, const CodeSegTy &patches,
             BasicTester *T, unsigned long id, bool dump_only) {
         BenchProgram::EnvMapTy buildEnv;
-        if (dump_only){
-            bool ret = T->test(BenchProgram::EnvMapTy(), id, dump_only);
-            return T->getResults(id);
-        }
         buildEnv.clear();
         if (ForCPP.getValue())
             buildEnv["COMPILE_CMD"] = "clang++";
         else
             buildEnv["COMPILE_CMD"] = GCC_CMD;
+
         bool build_succ = P.buildWithRepairedCode(CLANG_TEST_WRAP, buildEnv,
                 combineCode(codeSegs, patches));
         if (!build_succ) {
@@ -1998,7 +1995,11 @@ class TestBatcher {
         if (dumpOnly){
             for (size_t i = 0; i < tmp.size(); i++) {
                 BasicTester *T = tmp[i].T;
-                std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, tmp_patches[i], T, tmp[i].id, dumpOnly);
+                unsigned long id = tmp[i].id;
+                CodeSegTy codes = T->getCodeSegs(id);
+                CodeSegTy patches = T->getPatches(id);
+                double score = 0.0;
+                std::map<NewCodeMapTy, double> code_set = singleResult(T->cleanUpCode(combineCode(codes[id], patches[id])), score);
                 for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
                      it != code_set.end(); it++) {
                     NewCodeMapTy code = it->first;
