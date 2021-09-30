@@ -275,9 +275,7 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
                             it != new_codes.end(); ++it) {
                         std::ostringstream sout;
                         // Here prefix_name is just a prefix
-                        if (cnt != 0)
-                            sout << "/tmp/fixed-" << cnt;
-                        sout << prefix_name << replaceSlash(it->first);
+                        sout << "/tmp/fixed-" << cnt;
                         std::string output = this->patch_dir + "/" + std::to_string(cnt) + ".patch";
                         if (dumpAll)
                             output = this->patch_dir + "/" + std::to_string(cnt) + "_prophet.patch";
