@@ -82,6 +82,7 @@ void dumpSignificantInVec(FILE* fout, FeatureParameter *FP, const FeatureVector 
         }
 }
 
+
 int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
         bool print_fix_only, bool full_synthesis) {
     RepairCandidateQueue q;
@@ -274,13 +275,21 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
                             it != new_codes.end(); ++it) {
                         std::ostringstream sout;
                         // Here prefix_name is just a prefix
-                        sout << prefix_name << replaceSlash(it->first);
                         if (cnt != 0)
-                            sout << "-" << cnt;
+                            sout << "/tmp/fixed-" << cnt;
+                        sout << prefix_name << replaceSlash(it->first);
+                        std::string output = this->patch_dir + "/" + std::to_string(cnt) + ".patch";
+                        if (dumpAll)
+                            output = this->patch_dir + "/" + std::to_string(cnt) + "_prophet.patch";
+                        std::string fixed = "/tmp/fixed-" + std::to_string(cnt);
                         outlog_printf(1, "Found a fix! Store to: %s\n", sout.str().c_str());
                         std::ofstream fout(sout.str().c_str(), std::ofstream::out);
                         fout << it->second;
                         fout.close();
+                        auto first = bugged_files.begin();
+                        std::string original = P.getSrcdir() + "/" + *first;
+                        string cmd = "diff -U 0" + original.c_str() + " " + fixed.c_str() + " >> " + output.c_str();
+                        std::system(cmd.c_str());
                     }
                     resList.push_back(std::make_pair(-it2->second, cnt));
                     cnt ++;

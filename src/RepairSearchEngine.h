@@ -39,6 +39,7 @@ class RepairSearchEngine {
     ErrorLocalizer *L;
     TestCaseSetTy negative_cases, positive_cases;
     std::set<std::string> bugged_files;
+    std::string patch_dir;
     bool use_bugged_files;
     bool naive;
     bool learning;
@@ -53,13 +54,14 @@ class RepairSearchEngine {
     unsigned long long timeout_limit;
 
 public:
-    RepairSearchEngine(BenchProgram& P, ErrorLocalizer *L, bool naive, bool learning, FeatureParameter *FP)
+    RepairSearchEngine(BenchProgram& P, ErrorLocalizer *L, bool naive, bool learning, FeatureParameter *FP, std::string output_dir)
         : P(P), negative_cases(P.getNegativeCaseSet()), positive_cases(P.getPositiveCaseSet()), naive(naive),
         learning(learning && !naive), FP(FP), GeoP(0.08), random(false), summaryFile(""), timeout_limit(0) {
         this->L = L;
         bugged_files.clear();
         use_bugged_files = false;
         loc_limit = 5000;
+        this->patch_dir = output_dir;
     }
     virtual ~RepairSearchEngine() { }
     void setBuggedFile(const std::set<std::string> &bugged_files) {

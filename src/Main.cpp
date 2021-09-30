@@ -51,6 +51,9 @@ llvm::cl::opt<std::string> ConfigFilename(llvm::cl::Positional,
 llvm::cl::opt<std::string> RunWorkDir("r",
         llvm::cl::desc("Run with particular work dir, if it exists, it will resume the execution."),
         llvm::cl::value_desc("workdir"));
+llvm::cl::opt<std::string> OutputDir("o",
+                                      llvm::cl::desc("directory to output patches"),
+                                      llvm::cl::value_desc("outputdir"));
 llvm::cl::opt<bool> SkipProfileBuild("skip-profile-build", llvm::cl::desc("Skip To Build Profiler"));
 llvm::cl::opt<bool> NoCleanUp("no-clean-up",
         llvm::cl::desc("Do not clean work dir after finish"));
@@ -102,9 +105,14 @@ int main(int argc, char* argv[]) {
 
     std::string config_file_name = ConfigFilename.getValue();
     std::string run_work_dir = RunWorkDir.getValue();
+    std::string patch_dir = OutputDir.getValue();
 
     if ((config_file_name == "") && (run_work_dir == "")) {
         outlog_printf(0, "Must specify configuration file or existing working directory!");
+        exit(1);
+    }
+    if ((patch_dir == "")) {
+        outlog_printf(0, "Must specify output directory");
         exit(1);
     }
 
@@ -180,7 +188,7 @@ int main(int argc, char* argv[]) {
         learning = true;
     }
 
-    RepairSearchEngine E(*P, L, NaiveRepair.getValue(), learning, FP);
+    RepairSearchEngine E(*P, L, NaiveRepair.getValue(), learning, FP, patch_dir);
     if (!ConsiderAll.getValue())
         if (bugged_file.size())
             E.setBuggedFile(bugged_file);
