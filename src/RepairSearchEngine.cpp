@@ -288,7 +288,7 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
                         fout.close();
                         auto first = bugged_files.begin();
                         std::string original = P.getSrcdir() + "/" + *first;
-                        string cmd = "diff -U 0" + original.c_str() + " " + fixed.c_str() + " >> " + output.c_str();
+                        std::string cmd = "diff -U 0" + original + " " + fixed + " >> " + output;
                         std::system(cmd.c_str());
                     }
                     resList.push_back(std::make_pair(-it2->second, cnt));
