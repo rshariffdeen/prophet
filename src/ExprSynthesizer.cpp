@@ -1960,7 +1960,7 @@ class TestBatcher {
 
         bool build_succ = P.buildWithRepairedCode(CLANG_TEST_WRAP, buildEnv,
                 combineCode(codeSegs, patches));
-        if (!build_succ) {
+        if (!build_succ && !dump_only) {
             outlog_printf(2, "Single building for Tester %p id %lu failed as well!\n",
                     T, id);
             return std::map<NewCodeMapTy, double>();
@@ -2096,11 +2096,11 @@ public:
     void test(const RepairCandidate &candidate, BasicTester* T, bool dumpOnly) {
         std::vector<unsigned long> ids = T->preprocess(candidate);
         total_cnt += ids.size();
-        outlog_printf(2, "Spawn %lu instances, now Total %lu\n", (unsigned long)ids.size(), total_cnt);
+        outlog_printf(2, "Spawn %lu instances, dump(%d) now Total %lu\n", (unsigned long)ids.size(), dumpOnly, total_cnt);
         for (size_t i = 0; i < ids.size(); i++) {
             CodeSegTy codeSegs = T->getCodeSegs(ids[i]);
             PatchListTy patches = T->getPatches(ids[i]);
-            if (canMerge(codeSegs, patches) && (!naive)) {
+            if (canMerge(codeSegs, patches) && (!naive) && !dumpOnly) {
                 if (candidateMap.count(codeSegs) == 0)
                     candidateMap[codeSegs].clear();
                 candidateMap[codeSegs].push_back(CandidateEntry(candidate, T, ids[i]));
@@ -2112,7 +2112,7 @@ public:
                 tot_explored_templates += candidate.getCandidateAtoms().size();
                 patch_explored += candidate.getCandidateAtoms().size();
                 outlog_printf(0, "The number of explored templates: %lu\n", tot_explored_templates);
-                std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, patches, T, ids[i], false);
+                std::map<NewCodeMapTy, double> code_set = singleTest(codeSegs, patches, T, ids[i], dumpOnly);
                 for (std::map<NewCodeMapTy, double>::iterator it = code_set.begin();
                         it != code_set.end(); it++) {
                     NewCodeMapTy code = it->first;
