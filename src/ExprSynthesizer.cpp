@@ -1709,7 +1709,7 @@ public:
         // this caseVMap
         outlog_printf(3, "Collect values for post processing!\n");
         std::map<unsigned long, std::vector<std::vector<long long> > > caseVMap;
-        if (!collectValues(env, candidates[id], negative_records, caseVMap)) {
+        if (!collectValues(env, candidates[id], negative_records, caseVMap, dump_only)) {
             codes[id].clear();
             patches[id].clear();
             return false;
