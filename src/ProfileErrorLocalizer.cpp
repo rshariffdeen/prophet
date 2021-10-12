@@ -100,7 +100,8 @@ std::map<SourcePositionTy, ProfileInfoTy> ProfileErrorLocalizer::parseProfileRes
                 find_it->second.execution_cnt += cnt;
                 if (find_it->second.beforeend_cnt < cnt2) {
                     find_it->second.beforeend_cnt = cnt2;
-                    find_it->second.pid = pid;
+                    find_
+                    it->second.pid = pid;
                 }
             }
         }

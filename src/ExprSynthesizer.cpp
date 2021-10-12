@@ -779,7 +779,7 @@ public:
         return NULL;
     }
 
-    virtual bool test(const BenchProgram::EnvMapTy &env, unsigned long id) {
+    virtual bool test(const BenchProgram::EnvMapTy &env, unsigned long id, bool dump_only) {
         {
             outlog_printf(2, "[%llu] StringConstTester, Testing instance id %lu:\n", get_timer(), id);
             out_codes(codes[id], patches[id]);
@@ -801,7 +801,7 @@ public:
                 ret = system(cmd.c_str());
                 assert( ret == 0);
             }
-            if (!testOneCase(new_env, *it, false)) {
+            if (!testOneCase(new_env, *it, dump_only)) {
                 bool may_pass = false;
                 std::vector<std::string> outstr, expstr;
                 if (parseFile(outstr, tmp_out))
@@ -861,7 +861,7 @@ public:
         return true;
     }
 
-    virtual std::map<NewCodeMapTy, double> getResults(unsigned long id) {
+    virtual std::map<NewCodeMapTy, double> getResults(unsigned long id, bool dump_only) {
         outlog_printf(2, "[%llu] StringConstTester postprocessing! \n", get_timer());
         RepairCandidate candidate = candidates[id];
         unsigned long mutate_id = getMutateId(candidate);
@@ -884,12 +884,12 @@ public:
             return std::map<NewCodeMapTy, double>();
         }
 
-        bool passed = testNegativeCases(BenchProgram::EnvMapTy());
+        bool passed = testNegativeCases(BenchProgram::EnvMapTy(), dump_only);
         if (!passed) {
             outlog_printf(2, "Failed negative cases!");
             return std::map<NewCodeMapTy, double>();
         }
-        passed = testPositiveCases(BenchProgram::EnvMapTy());
+        passed = testPositiveCases(BenchProgram::EnvMapTy(), dump_only);
         if (!passed) {
             outlog_printf(2, "Failed positive cases!");
             return std::map<NewCodeMapTy, double>();
@@ -1494,7 +1494,7 @@ class ConditionSynthesisTester : public BasicTester {
     }
 
     bool testNegativeCases(const BenchProgram::EnvMapTy &env,
-            std::map<unsigned long, std::vector<unsigned long> > &negative_records) {
+            std::map<unsigned long, std::vector<unsigned long> > &negative_records, bool dump_only) {
         negative_records.clear();
         // First going to make sure it passes all negative cases
         for (TestCaseSetTy::iterator case_it = negative_cases.begin();
@@ -1513,7 +1513,7 @@ class ConditionSynthesisTester : public BasicTester {
             while (it_cnt < 10) {
                 outlog_printf(5, "Iteration %lu\n", it_cnt);
                 //llvm::errs() << "Testing iteration: " << it_cnt << "\n";
-                passed = P.test(std::string("src"), *case_it, testEnv, false, false);
+                passed = P.test(std::string("src"), *case_it, testEnv, false, dump_only);
                 std::vector<unsigned long> tmp_v = parseBranchRecord();
                 writeBranchRecordTerminator();
                 for (size_t i = 0; i < tmp_v.size(); i++)
@@ -1542,7 +1542,7 @@ class ConditionSynthesisTester : public BasicTester {
                 testEnv.insert(std::make_pair("TMP_FILE", ISNEG_TMPFILE));
                 int ret = system((std::string("rm -rf ") + ISNEG_TMPFILE).c_str());
                 assert( ret == 0);
-                passed = P.test(std::string("src"), *case_it, testEnv, false, false);
+                passed = P.test(std::string("src"), *case_it, testEnv, false, dump_only);
                 if (passed) {
                     std::vector<unsigned long> tmp_v = parseBranchRecord();
                     // FIXME: strange error in wireshark, we just ignore right now
@@ -1595,7 +1595,7 @@ class ConditionSynthesisTester : public BasicTester {
 
     bool collectValues(const BenchProgram::EnvMapTy &env, const RepairCandidate &candidate,
             std::map<unsigned long, std::vector<unsigned long> > &negative_records,
-            std::map<unsigned long, std::vector<std::vector<long long> > > &caseVMap) {
+            std::map<unsigned long, std::vector<std::vector<long long> > > &caseVMap, bool dump_only) {
         size_t condition_idx = getConditionIndex(candidate);
         const ExprListTy &exps = candidate.actions[condition_idx].candidate_atoms;
         caseVMap.clear();
@@ -1615,7 +1615,7 @@ class ConditionSynthesisTester : public BasicTester {
             std::string cmd = std::string("rm -rf ") + ISNEG_RECORDFILE;
             int ret = system(cmd.c_str());
             assert( ret == 0);
-            bool passed = P.test(std::string("src"), *tit, testEnv, false, false);
+            bool passed = P.test(std::string("src"), *tit, testEnv, false, dump_only);
             // FIXME: It triggers non-deterministic things, just
             // get out
             if (!passed) {
@@ -1635,7 +1635,7 @@ class ConditionSynthesisTester : public BasicTester {
             std::string cmd = std::string("rm -rf ") + ISNEG_RECORDFILE;
             int ret = system(cmd.c_str());
             assert( ret == 0);
-            bool passed = P.test(std::string("src"), *tit, testEnv, false, false);
+            bool passed = P.test(std::string("src"), *tit, testEnv, false, dump_only);
             caseVMap[*tit].clear();
             // XXX: This may happen because record takes more time, and it
             // makes the positive case to time out we simply skip if it fails
@@ -1685,7 +1685,7 @@ public:
         return res;
     }
 
-    virtual bool test(const BenchProgram::EnvMapTy &env, unsigned long id) {
+    virtual bool test(const BenchProgram::EnvMapTy &env, unsigned long id, bool dump_only) {
         {
             outlog_printf(2, "[%llu] CondTester, Testing instance id %lu:\n", get_timer(), id);
             out_codes(codes[id], patches[id]);
@@ -1694,13 +1694,13 @@ public:
         // negative cases, and we store it to negative_records
         std::map<unsigned long, std::vector<unsigned long> > negative_records;
         outlog_printf(3, "Testing negative cases!\n");
-        if (!testNegativeCases(env, negative_records)) {
+        if (!testNegativeCases(env, negative_records, dump_only)) {
             codes[id].clear();
             patches[id].clear();
             return false;
         }
         outlog_printf(3, "Testing positive cases!\n");
-        if (!BasicTester::testPositiveCases(env)) {
+        if (!BasicTester::testPositiveCases(env, dump_only)) {
             codes[id].clear();
             patches[id].clear();
             return false;
@@ -1725,7 +1725,7 @@ public:
         outlog_printf(0, "Total cnt of cond schemas: %lu\n", codes.size());
     }
 
-    virtual std::map<NewCodeMapTy, double> getResults(unsigned long id) {
+    virtual std::map<NewCodeMapTy, double> getResults(unsigned long id, bool dump_only) {
         post_cnt ++;
         {
             outlog_printf(2, "CondTester, Postprocessing instance id %lu:\n", id);
@@ -1819,7 +1819,7 @@ public:
                 continue;
             }
             outlog_printf(3, "Verifying positive cases\n");
-            bool passed_pos = testPositiveCases(std::map<std::string, std::string>());
+            bool passed_pos = testPositiveCases(std::map<std::string, std::string>(), dump_only);
             //passed = P.testSet("src", positive_cases, std::map<std::string, std::string>());
             if (!passed_pos) {
                 outlog_printf(3, "Not passed!\n");
@@ -1965,7 +1965,7 @@ class TestBatcher {
                     T, id);
             return std::map<NewCodeMapTy, double>();
         }
-        bool ret = T->test(BenchProgram::EnvMapTy(), id, false);
+        bool ret = T->test(BenchProgram::EnvMapTy(), id, dump_only);
         if (ret)
             return T->getResults(id);
         else
