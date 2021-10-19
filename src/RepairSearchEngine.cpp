@@ -217,7 +217,6 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
             else
                 fprintf(fout, "\n");
 
-            CodeRewriter R(M, candidate, NULL);
             fprintf(fout, "%s", candidate.toString(M).c_str());
 
 
