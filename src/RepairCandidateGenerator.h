@@ -18,6 +18,7 @@
 #pragma once
 #include "ASTUtils.h"
 #include "SourceContextManager.h"
+#include "ExprSynthesizer.h"
 #include <vector>
 #include <queue>
 
@@ -136,6 +137,7 @@ struct RepairCandidate {
     std::string toString(SourceContextManager &M) const;
 
     void dump() const;
+    void dumpFix(std::string src_dir, std::string patch_dir, SourceContextManager &M) const;
 };
 
 class RepairCandidateGeneratorImpl;

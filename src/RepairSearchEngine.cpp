@@ -216,7 +216,11 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
             }
             else
                 fprintf(fout, "\n");
+
+            CodeRewriter R(M, candidate, NULL);
             fprintf(fout, "%s", candidate.toString(M).c_str());
+
+
             if (learning) {
                 fprintf(fout, "Score %.5lf\n", candidate_and_score.second);
                 std::set<Expr*> atoms = candidate.getCandidateAtoms();
@@ -242,6 +246,18 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
             fprintf(fout, "======================\n");
         }
         fclose(fout);
+        return 0;
+    }
+
+    if (dumpAll) {
+        outlog_printf(1, "dumping candidate templates...\n");
+        unsigned long cnt = 0;
+        while (q.size() > 0) {
+            RepairCandidateWithScore candidate_and_score = q.top();
+            RepairCandidate candidate = candidate_and_score.first;
+            q.pop();
+            candidate.dumpFix(P.getSrcdir(), this->patch_dir, M);
+        }
         return 0;
     }
 

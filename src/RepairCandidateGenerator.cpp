@@ -28,6 +28,7 @@
 #include <math.h>
 
 //#define DISABLE_IFSTMT_INSERT
+#define SOURCECODE_BACKUP "__backup"
 
 using namespace clang;
 
@@ -1158,6 +1159,8 @@ std::string RepairCandidate::toString(SourceContextManager &M) const {
             sout << "At location " << actions[i].loc.toString(M) << "\n";
     CodeRewriter R(M, *this, NULL);
     std::map<std::string, std::vector<std::string> > patches = R.getPatches();
+    R.getCodeSegments();
+
     for (std::map<std::string, std::vector<std::string> >::iterator it = patches.begin();
             it != patches.end(); ++it) {
         sout << "--Src File: " << it->first << "\n";
@@ -1185,6 +1188,33 @@ void RepairCandidate::dump() const {
         else
             llvm::errs() << "\n";
     }
+}
+
+void RepairCandidate::dumpFix(std::string src_dir, std::string patch_dir, SourceContextManager &M) const {
+    CodeRewriter R(M, *this, NULL);
+    NewCodeMapTy code = R.getCodes();
+    size_t cnt = 0;
+
+    for (std::map<std::string, std::string>::const_iterator it = code.begin();
+         it != code.end(); ++it) {
+        std::string target_file = it->first;
+        if (target_file[0] != '/')
+            target_file = src_dir + "/" + target_file;
+        std::string original_file = it->first + ".orig";
+
+        // Copy the target file
+        std::string cmd = "cp " + target_file + " " + original_file;
+        std::system(cmd.c_str());
+
+        cnt ++;
+        std::ofstream fout(target_file.c_str(), std::ofstream::out);
+        fout << it->second;
+        fout.close();
+        std::string output = patch_dir + "/" + std::to_string(cnt) + "_prophet.patch";
+        cmd = "diff -U 0 " + original_file + " " + target_file + " >> " + output;
+        std::system(cmd.c_str());
+    }
+
 }
 
 RepairCandidateGenerator::RepairCandidateGenerator(SourceContextManager &M, const std::string &file,
