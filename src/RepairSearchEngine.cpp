@@ -250,12 +250,13 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
 
     if (dumpAll) {
         outlog_printf(1, "dumping candidate templates...\n");
-        unsigned long cnt = 0;
+        size_t id = 0;
         while (q.size() > 0) {
+            id++;
             RepairCandidateWithScore candidate_and_score = q.top();
             RepairCandidate candidate = candidate_and_score.first;
             q.pop();
-            candidate.dumpFix(P.getSrcdir(), this->patch_dir, M);
+            candidate.dumpFix(P.getSrcdir(), this->patch_dir, M, id);
         }
         return 0;
     }

@@ -136,7 +136,7 @@ struct RepairCandidate {
     std::string toString(SourceContextManager &M) const;
 
     void dump() const;
-    void dumpFix(std::string src_dir, std::string patch_dir, SourceContextManager &M) const;
+    void dumpFix(std::string src_dir, std::string patch_dir, SourceContextManager &M, size_t id) const;
 };
 
 class RepairCandidateGeneratorImpl;
