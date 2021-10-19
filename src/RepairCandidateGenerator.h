@@ -18,7 +18,6 @@
 #pragma once
 #include "ASTUtils.h"
 #include "SourceContextManager.h"
-#include "ExprSynthesizer.h"
 #include <vector>
 #include <queue>
 
