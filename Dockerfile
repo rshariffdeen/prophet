@@ -30,12 +30,12 @@ RUN cd /llvm/llvm-361/build; make -j32; make install
 ADD . /prophet-gpl
 RUN cd /prophet-gpl;autoreconf -i;
 RUN cd /prophet-gpl;CC=clang CXX=clang++ ./configure --host=x86_64 --build=x86_64 --enable-shared
-RUN sed -i -e '456d' /prophet-gpl/benchmarks/php-deps/Makefile
-RUN sed -i 's/lighttpd-deps//g' /prophet-gpl/benchmarks/Makefile
-RUN sed -i 's/benchmarks//g' /prophet-gpl/Makefile
-RUN sed -i 's/tests//g' /prophet-gpl/Makefile
+RUN sed -i -e '456d' /prophet/benchmarks/php-deps/Makefile
+RUN sed -i 's/lighttpd-deps//g' /prophet/benchmarks/Makefile
+RUN sed -i 's/benchmarks//g' /prophet/Makefile
+RUN sed -i 's/tests//g' /prophet/Makefile
 RUN cd /prophet-gpl;make CFLAGS='-Wno-error' CXXFLAGS='-Wno-error -fno-rtti' -j64
-ENV LIBRARY_PATH=/prophet-gpl/src/.libs
+ENV LIBRARY_PATH=/prophet/src/.libs
 ENV LD_LIBRARY_PATH=/prophet-gpl/src/.libs
 RUN cd $LIBRARY_PATH && ar -x libprofile_runtime.a && gcc -shared _prophet_profile.o -o libprofile_runtime.so && \
     ln -s libprofile_runtime.so libprofile_runtime.so.0 && rm _prophet_profile.o
