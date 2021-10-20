@@ -26,7 +26,6 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include <queue>
 #include <math.h>
-#include <sys/stat.h>
 
 //#define DISABLE_IFSTMT_INSERT
 #define SOURCECODE_BACKUP "__backup"
@@ -1196,22 +1195,19 @@ void RepairCandidate::dumpFix(std::string src_dir, std::string patch_dir, Source
 
     for (std::map<std::string, std::string>::const_iterator it = code.begin();
          it != code.end(); ++it) {
-        std::string original_file = it->first;
-        if (original_file[0] != '/')
-            original_file = src_dir + "/" + original_file;
-        std::string fix_file = original_file + std::to_string(id) + "_fix";
+        std::string target_file = it->first;
+        if (target_file[0] != '/')
+            target_file = src_dir + "/" + target_file;
+        std::string original_file = target_file + ".orig";
 
         // Copy the target file
-        struct stat buffer;
-        std::string cmd;
-        cmd = "cp " + original_file + " " + fix_file;
+        std::string cmd = "cp " + target_file + " " + original_file;
         std::system(cmd.c_str());
-
-        std::ofstream fout(fix_file.c_str(), std::ofstream::out);
+        std::ofstream fout(target_file.c_str(), std::ofstream::out);
         fout << it->second;
         fout.close();
         std::string output = patch_dir + "/" + std::to_string(id) + "_prophet.patch";
-        cmd = "diff -U 0 " + original_file + " " + fix_file + " >> " + output;
+        cmd = "diff -U 0 " + original_file + " " + target_file + " >> " + output;
         std::system(cmd.c_str());
     }
 
