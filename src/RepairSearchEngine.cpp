@@ -251,15 +251,12 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
     if (dumpAll) {
         outlog_printf(1, "dumping candidate templates...\n");
         size_t id = 0;
-        size_t temp_count = 0;
         while (q.size() > 0) {
             id++;
             RepairCandidateWithScore candidate_and_score = q.top();
             RepairCandidate candidate = candidate_and_score.first;
-            temp_count += candidate.getCandidateAtoms().size();
             q.pop();
             candidate.dumpFix(P.getSrcdir(), this->patch_dir, M, id);
-            outlog_printf(0, "The number of explored templates: %lu\n", temp_count);
         }
         return 0;
     }
