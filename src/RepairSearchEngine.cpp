@@ -28,6 +28,7 @@
 #include "clang/AST/ASTContext.h"
 #include "FeatureVector.h"
 #include "FeatureParameter.h"
+#include "CodeRewrite.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <fstream>
@@ -42,8 +43,9 @@ using namespace clang;
 
 class thread_obj{
 public:
-    void operator()(std::string src_dir, std::string patch_dir, SourceContextManager &M, size_t id, RepairCandidate candidate) {
-        candidate.dumpFix(P.getSrcdir(), this->patch_dir, M, id);
+    void operator()(std::string src_dir, std::string patch_dir, NewCodeMapTy code, size_t id, RepairCandidate candidate) {
+
+        candidate.dumpFix(src_dir, patch_dir, code, id);
     }
 };
 
@@ -268,7 +270,10 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
             RepairCandidate candidate = candidate_and_score.first;
             temp_count += candidate.getCandidateAtoms().size();
             q.pop();
-            threads.push_back(std::thread(P.getSrcdir(), this->patch_dir, M, id, candidate));
+            CodeRewriter R(M, candidate, NULL);
+            NewCodeMapTy code = R.getCodes();
+
+            threads.push_back(std::thread(thread_obj(), P.getSrcdir(), this->patch_dir, code, id, candidate));
             outlog_printf(0, "The number of explored templates: %lu\n", temp_count);
         }
         for (auto &th : threads) {

@@ -18,6 +18,7 @@
 #pragma once
 #include "ASTUtils.h"
 #include "SourceContextManager.h"
+
 #include <vector>
 #include <queue>
 
@@ -28,6 +29,7 @@ namespace clang {
 
 typedef std::vector<clang::Stmt*> StmtListTy;
 typedef std::vector<clang::Expr*> ExprListTy;
+typedef std::map<std::string, std::string> NewCodeMapTy;
 
 struct RepairAction {
     // tag = 1, means a statement level mutation
@@ -136,7 +138,7 @@ struct RepairCandidate {
     std::string toString(SourceContextManager &M) const;
 
     void dump() const;
-    void dumpFix(std::string src_dir, std::string patch_dir, SourceContextManager &M, size_t id) const;
+    void dumpFix(std::string src_dir, std::string patch_dir, NewCodeMapTy code, size_t id) const;
 };
 
 class RepairCandidateGeneratorImpl;

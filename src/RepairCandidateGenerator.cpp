@@ -1189,9 +1189,7 @@ void RepairCandidate::dump() const {
     }
 }
 
-void RepairCandidate::dumpFix(std::string src_dir, std::string patch_dir, SourceContextManager &M, size_t id) const {
-    CodeRewriter R(M, *this, NULL);
-    NewCodeMapTy code = R.getCodes();
+void RepairCandidate::dumpFix(std::string src_dir, std::string patch_dir, NewCodeMapTy code, size_t id) const {
 
     for (std::map<std::string, std::string>::const_iterator it = code.begin();
          it != code.end(); ++it) {
