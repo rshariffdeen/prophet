@@ -33,11 +33,19 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
+#include <thread>
 
 llvm::cl::opt<bool> DumpFeatureDetail("dump-feature", llvm::cl::init(false));
 llvm::cl::opt<bool> PrintBlowupInfo("blowup", llvm::cl::init(false));
 
 using namespace clang;
+
+class thread_obj{
+public:
+    void operator()(std::string src_dir, std::string patch_dir, SourceContextManager &M, size_t id, RepairCandidate candidate) {
+        candidate.dumpFix(P.getSrcdir(), this->patch_dir, M, id);
+    }
+};
 
 static std::string replaceSlash(const std::string &str) {
     std::string res = "";
@@ -251,12 +259,16 @@ int RepairSearchEngine::run(const std::string &out_file, size_t try_at_least,
     if (dumpAll) {
         outlog_printf(1, "dumping candidate templates...\n");
         size_t id = 0;
+        std::vector<std::thread> threads;
         while (q.size() > 0) {
             id++;
             RepairCandidateWithScore candidate_and_score = q.top();
             RepairCandidate candidate = candidate_and_score.first;
             q.pop();
-            candidate.dumpFix(P.getSrcdir(), this->patch_dir, M, id);
+            threads.push_back(std::thread(P.getSrcdir(), this->patch_dir, M, id, candidate));
+        }
+        for (auto &th : threads) {
+            th.join();
         }
         return 0;
     }
