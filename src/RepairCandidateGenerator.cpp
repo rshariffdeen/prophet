@@ -1193,13 +1193,13 @@ void RepairCandidate::dumpFix(std::string src_dir, std::string patch_dir, NewCod
 
     for (std::map<std::string, std::string>::const_iterator it = code.begin();
          it != code.end(); ++it) {
-        std::string target_file = it->first;
-        if (target_file[0] != '/')
-            target_file = src_dir + "/" + target_file;
-        std::string original_file = target_file + ".orig";
+        std::string original_file = it->first;
+        if (original_file[0] != '/')
+            original_file = src_dir + "/" + original_file;
+        std::string target_file = original_file + "_" + std::to_string(id);
 
         // Copy the target file
-        std::string cmd = "cp " + target_file + " " + original_file;
+        std::string cmd = "cp " + original_file + " " + target_file;
         std::system(cmd.c_str());
         std::ofstream fout(target_file.c_str(), std::ofstream::out);
         fout << it->second;
