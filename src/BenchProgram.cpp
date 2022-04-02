@@ -464,12 +464,8 @@ bool BenchProgram::buildWithRepairedCode(const std::string &wrapScript, const En
         }
     }
     fout2.close();
-    time_t begin,end,duration;
-    time(&begin);
     bool succ = buildSubDir("src", wrapScript, envMap);
-    time(&end);
-    duration = end - begin;
-    outlog_printf(0, "build time: %5f\n", duration);
+
 
     // Remove temporary backup file, because we have done it
     cnt = 0;

@@ -1957,9 +1957,13 @@ class TestBatcher {
             buildEnv["COMPILE_CMD"] = "clang++";
         else
             buildEnv["COMPILE_CMD"] = GCC_CMD;
-
+        time_t begin,end,duration;
+        unsigned long start_s = get_timer();
         bool build_succ = P.buildWithRepairedCode(CLANG_TEST_WRAP, buildEnv,
                 combineCode(codeSegs, patches));
+        unsigned long end_s = get_timer();
+        unsigned long duration_s = end_s - start_s;
+        outlog_printf(0, "build time: %ld\n", duration_s);
         if (!build_succ && !dump_only) {
             outlog_printf(2, "Single building for Tester %p id %lu failed as well!\n",
                     T, id);
@@ -2026,7 +2030,11 @@ class TestBatcher {
                 buildEnv["COMPILE_CMD"] = "clang++";
             else
                 buildEnv["COMPILE_CMD"] = GCC_CMD;
+            unsigned long start = get_timer();
             bool build_succ = P.buildWithRepairedCode(CLANG_TEST_WRAP, buildEnv, codes);
+            unsigned long end = get_timer();
+            unsigned long duration = end - start;
+            outlog_printf(0, "build time: %ld\n", duration);
             if (build_succ) {
                 outlog_printf(2, "Merged code building succ, going to invoke tester!\n");
                 // We then invoke these testers they all share this same built instance
